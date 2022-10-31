@@ -66,13 +66,12 @@ async def root(flame: UploadFile, usc: UploadFile, background_tasks: BackgroundT
 @app.get("/api/download/{uid}")
 def download(uid: uuid.UUID):
     dir_name = './data/{}'.format(str(uid))
-    zip_path = '{}/{}'.format(dir_name, 'output.dtt')
+    zip_path = '{}/{}'.format(dir_name, 'output.zip')
     if not os.path.isdir(dir_name):
         raise HTTPException(status_code=404, detail="Project not found")
     if not os.path.isfile(zip_path):
         shutil.make_archive('./data/{}/output'.format(str(uid)), 'zip', dir_name + '/output')
-        shutil.move('{}/{}'.format(dir_name, 'output.zip'), zip_path)
-    return FileResponse(zip_path)
+    return FileResponse(zip_path, filename='{}.dtt'.format(uid))
 
 
 @app.get("/api/status/{uid}")
