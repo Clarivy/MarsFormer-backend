@@ -36,6 +36,9 @@ def run_job(uid: str, usc_name: str, flame_name: str):
     subprocess.run(
         ["python3", "../../../cal.py"], cwd=cwd)
 
+    with open("./data/{}/output/VERSION".format(uid), 'w') as f:
+        f.write("1")
+
     helper_result.write('\nJob {} Done.\n'.format(uid))
     helper_result.close()
 
@@ -63,11 +66,12 @@ async def root(flame: UploadFile, usc: UploadFile, background_tasks: BackgroundT
 @app.get("/api/download/{uid}")
 def download(uid: uuid.UUID):
     dir_name = './data/{}'.format(str(uid))
-    zip_path = '{}/{}'.format(dir_name, 'output.zip')
+    zip_path = '{}/{}'.format(dir_name, 'output.dtt')
     if not os.path.isdir(dir_name):
         raise HTTPException(status_code=404, detail="Project not found")
     if not os.path.isfile(zip_path):
         shutil.make_archive('./data/{}/output'.format(str(uid)), 'zip', dir_name + '/output')
+        shutil.move('{}/{}'.format(dir_name, 'output.zip'), zip_path)
     return FileResponse(zip_path)
 
 
