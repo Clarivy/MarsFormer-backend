@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "zlw-tools-backend"
+version = "0.1.0"
+description = ""
+authors = ["Spedoske <leomundspedoske@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.85.1"
+uvicorn = {extras = ["standard"], version = "^0.19.0"}
+aiofiles = "^22.1.0"
+python-multipart = "^0.0.5"
+zlw = {path = "zlw"}
+numpy = "^1.23.4"
+msgpack = "^1.0.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+

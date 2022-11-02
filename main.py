@@ -5,11 +5,13 @@ import uuid
 import subprocess
 
 import aiofiles as aiofiles
+import numpy as np
 from fastapi import FastAPI, UploadFile, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 import shutil
+import msgpack
 
 app = FastAPI()
 
@@ -29,15 +31,27 @@ def generate_id():
 def run_job(uid: str, usc_name: str, flame_name: str):
     cwd = './data/{}/output'.format(uid)
     helper_result = open("./data/{}/result".format(uid), 'w')
-    subprocess.run(
-        ["python3", "../../../zlw/helper.py", 'topo_transfer', '../usc/' + usc_name, '../flame/' + flame_name, 'output',
-         '--map_path', 'map.txt'], cwd=cwd, stderr=helper_result)
+    subprocess.run(' '.join(
+        ["python", "../../../zlw/zlw/helper.py", 'topo_transfer', '../usc/' + usc_name, '../flame/' + flame_name,
+         'output', '--map_path', 'map.txt']), cwd=cwd, stderr=helper_result, shell=True)
 
-    subprocess.run(
-        ["python3", "../../../cal.py"], cwd=cwd)
+    subprocess.run(' '.join(["python", "../../../cal.py"]), cwd=cwd, shell=True)
 
     with open("./data/{}/output/VERSION".format(uid), 'w') as f:
-        f.write("1")
+        f.write("2")
+
+    for subdir, dirs, files in os.walk(cwd):
+        for file in files:
+            if file.endswith('.npy'):
+                try:
+                    filepath = subdir + os.sep + file
+                    mat = np.load(filepath).tolist()
+                    mat = msgpack.packb(mat)
+                    with open(filepath[:-4] + '.pak', 'wb') as f:
+                        f.write(mat)
+                    os.remove(filepath)
+                except:
+                    pass
 
     helper_result.write('\nJob {} Done.\n'.format(uid))
     helper_result.close()
@@ -78,10 +92,13 @@ def download(uid: uuid.UUID):
 def check_status(uid: uuid.UUID):
     output_file = './data/{}/result'.format(str(uid))
     if not os.path.isfile(output_file):
-        return {
-            'progress': '0%',
-            'done': False,
-        }
+        if os.path.isdir('./data/{}'.format(str(uid))):
+            return {
+                'progress': '0%',
+                'done': False,
+            }
+        else:
+            raise HTTPException(status_code=404, detail="Project not found")
     output_file = open(output_file)
     log = output_file.read()
     if re.findall('Job {} Done\\.'.format(str(uid)), log):
